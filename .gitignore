@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+.env
+.idea/
+.vscode/
+*.swp
+.DS_Store
+# allow result CSVs/logs/figures to be committed back from the server
+!results/
