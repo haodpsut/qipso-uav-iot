@@ -22,21 +22,85 @@ def _read(csv_path):
         return list(csv.DictReader(f))
 
 
+def _markers_for(alg: str) -> str:
+    return {
+        "qipso":    "o",
+        "qipsode":  "s",      # square — distinguishes from qipso
+        "pso":      "^",
+        "ga":       "v",
+        "de":       "D",
+        "gwo":      "<",
+        "lshade":   ">",
+        "cmaes":    "P",
+        "greedy":   "X",
+        "straight": "*",
+    }.get(alg.lower(), "o")
+
+
+def _linestyle_for(alg: str) -> str:
+    return {
+        "qipso":   "-",
+        "qipsode": "-",
+        "pso":     "--",
+        "ga":      "--",
+        "de":      "-.",
+        "gwo":     ":",
+        "lshade":  "-.",
+        "cmaes":   ":",
+        "greedy":  ":",
+        "straight": ":",
+    }.get(alg.lower(), "-")
+
+
 def plot_scalability(csv_path: Path, out_dir: Path):
+    """Two-panel scalability: (a) evolutionary algorithms + straight-line on
+    a linear-ish scale where they are visible; (b) the divergent Greedy-TSP
+    baseline on a separate axis. Plotting them on the same axes hides the
+    inter-algorithm differences in the first group."""
     rows = _read(csv_path)
     by = defaultdict(lambda: defaultdict(list))
     for r in rows:
         by[r["alg"]][int(r["K"])].append(float(r["energy_j"]))
-    fig, ax = plt.subplots()
-    for alg, Kd in by.items():
+
+    # split into "compact" (close-to-optimal) and "divergent" (Greedy)
+    divergent = {"greedy"}
+    compact_algs = sorted([a for a in by if a not in divergent],
+                          key=lambda a: a)
+    div_algs = sorted([a for a in by if a in divergent])
+
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(6.0, 2.6),
+                                     gridspec_kw={"width_ratios": [3, 1]})
+
+    for alg in compact_algs:
+        Kd = by[alg]
         Ks = sorted(Kd.keys())
-        mu = [np.mean(Kd[k]) for k in Ks]
-        sd = [np.std(Kd[k]) for k in Ks]
-        ax.errorbar(Ks, mu, yerr=sd, label=alg.upper(),
-                    color=color_for(alg), marker="o", capsize=2)
-    ax.set_xlabel("Number of IoT nodes $K$")
-    ax.set_ylabel("Mission energy (J)")
-    ax.legend(frameon=False)
+        mu = np.array([np.mean(Kd[k]) for k in Ks])
+        sd = np.array([np.std(Kd[k]) for k in Ks])
+        ax_a.errorbar(Ks, mu, yerr=sd, label=alg.upper(),
+                      color=color_for(alg), marker=_markers_for(alg),
+                      linestyle=_linestyle_for(alg),
+                      markersize=4, capsize=2, lw=1.2)
+    ax_a.set_xlabel("Number of IoT nodes $K$")
+    ax_a.set_ylabel("Mission energy (J)")
+    ax_a.legend(frameon=False, fontsize=7, ncol=2)
+
+    for alg in div_algs:
+        Kd = by[alg]
+        Ks = sorted(Kd.keys())
+        mu = np.array([np.mean(Kd[k]) for k in Ks])
+        sd = np.array([np.std(Kd[k]) for k in Ks])
+        ax_b.errorbar(Ks, mu, yerr=sd, label=alg.upper(),
+                      color=color_for(alg), marker=_markers_for(alg),
+                      markersize=4, capsize=2, lw=1.2)
+    ax_b.set_xlabel("$K$")
+    ax_b.set_ylabel("Mission energy (J)")
+    ax_b.set_title("Greedy (divergent)", fontsize=8)
+    ax_b.legend(frameon=False, fontsize=7)
+    # use scientific notation on the divergent panel
+    ax_b.yaxis.set_major_formatter(plt.matplotlib.ticker.ScalarFormatter(useMathText=True))
+    ax_b.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
+
+    fig.tight_layout()
     path = out_dir / "fig_scalability.pdf"
     fig.savefig(path)
     print(f"Saved {path}")
@@ -80,20 +144,50 @@ def plot_runtime(csv_path: Path, out_dir: Path):
 
 
 def plot_multi_uav(csv_path: Path, out_dir: Path):
+    """Two-panel multi-UAV: (a) total cost (objective with penalties); (b)
+    data completion ratio. Plotting cost reveals the QIPSO win at M=2 that
+    is hidden by the energy-only view."""
     rows = _read(csv_path)
-    by = defaultdict(lambda: defaultdict(list))
+    by_cost = defaultdict(lambda: defaultdict(list))
+    by_comp = defaultdict(lambda: defaultdict(list))
     for r in rows:
-        by[r["alg"]][int(r["M"])].append(float(r["energy_j"]))
-    fig, ax = plt.subplots()
-    for alg, Md in by.items():
+        by_cost[r["alg"]][int(r["M"])].append(float(r["best_cost"]))
+        by_comp[r["alg"]][int(r["M"])].append(float(r["completion"]))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.4, 2.8))
+
+    algs = sorted(by_cost.keys())
+    for alg in algs:
+        Md = by_cost[alg]
         Ms = sorted(Md.keys())
-        mu = [np.mean(Md[m]) for m in Ms]
-        sd = [np.std(Md[m]) for m in Ms]
-        ax.errorbar(Ms, mu, yerr=sd, label=alg.upper(),
-                    color=color_for(alg), marker="o", capsize=2)
-    ax.set_xlabel("Number of UAVs $M$")
-    ax.set_ylabel("Total mission energy (J)")
-    ax.legend(frameon=False)
+        mu = np.array([np.mean(Md[m]) for m in Ms])
+        sd = np.array([np.std(Md[m]) for m in Ms])
+        ax1.errorbar(Ms, mu, yerr=sd, label=alg.upper(),
+                     color=color_for(alg), marker=_markers_for(alg),
+                     linestyle=_linestyle_for(alg),
+                     markersize=4, capsize=2, lw=1.2)
+    ax1.set_xlabel("Number of UAVs $M$")
+    ax1.set_ylabel("Total mission cost (J + penalties)")
+    ax1.set_yscale("log")
+    ax1.set_xticks(sorted({m for d in by_cost.values() for m in d}))
+    ax1.legend(frameon=False, fontsize=7, ncol=2, loc="upper left")
+    ax1.set_title("(a) cost", fontsize=9)
+
+    for alg in algs:
+        Md = by_comp[alg]
+        Ms = sorted(Md.keys())
+        mu = np.array([np.mean(Md[m]) for m in Ms])
+        sd = np.array([np.std(Md[m]) for m in Ms])
+        ax2.errorbar(Ms, mu, yerr=sd, label=alg.upper(),
+                     color=color_for(alg), marker=_markers_for(alg),
+                     linestyle=_linestyle_for(alg),
+                     markersize=4, capsize=2, lw=1.2)
+    ax2.set_xlabel("Number of UAVs $M$")
+    ax2.set_ylabel("Data completion ratio")
+    ax2.set_xticks(sorted({m for d in by_comp.values() for m in d}))
+    ax2.set_title("(b) completion", fontsize=9)
+
+    fig.tight_layout()
     path = out_dir / "fig_multi_uav.pdf"
     fig.savefig(path)
     print(f"Saved {path}")
