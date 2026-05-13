@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.algorithms import OPTIMIZERS
 from src.algorithms.qipso import QIPSOConfig
+from src.algorithms.qipso_de import QIPSODEConfig
 from src.algorithms.pso import PSOConfig
 from src.algorithms.ga import GAConfig
 from src.algorithms.de import DEConfig
@@ -50,6 +51,10 @@ def build_optimizer(name: str, env, dim: int, lower: float, upper: float,
     init_x = env.warm_start(swarm_size, seed=seed) if warm_start else None
     if name == "qipso":
         cfg = QIPSOConfig(iterations=iterations, swarm_size=swarm_size, **overrides)
+        return cls(env.fitness, dim, lower, upper, cfg=cfg, device=device,
+                   seed=seed, init_x=init_x)
+    if name == "qipsode":
+        cfg = QIPSODEConfig(iterations=iterations, pop_size=swarm_size, **overrides)
         return cls(env.fitness, dim, lower, upper, cfg=cfg, device=device,
                    seed=seed, init_x=init_x)
     if name == "pso":

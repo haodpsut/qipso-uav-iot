@@ -9,11 +9,12 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 WONG_COLORS = {
-    "qipso": "#0072B2",   # blue
-    "pso":   "#D55E00",   # vermillion
-    "ga":    "#009E73",   # green
-    "de":    "#CC79A7",   # pink
-    "greedy": "#E69F00",  # orange
+    "qipso":   "#0072B2",   # blue
+    "qipsode": "#56B4E9",   # sky blue (hybrid)
+    "pso":     "#D55E00",   # vermillion
+    "ga":      "#009E73",   # green
+    "de":      "#CC79A7",   # pink
+    "greedy":  "#E69F00",   # orange
     "straight": "#999999",
 }
 WONG_PALETTE = ["#0072B2", "#D55E00", "#009E73", "#CC79A7",
