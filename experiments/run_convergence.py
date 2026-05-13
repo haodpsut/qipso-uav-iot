@@ -14,7 +14,7 @@ from common import build_env, run_one, device_auto
 from src.utils import save_csv, save_json
 
 
-ALGS = ["qipso", "qipsode", "pso", "ga", "de"]
+ALGS = ["qipso", "qipsode", "pso", "ga", "de", "gwo", "lshade", "cmaes"]
 
 
 def main() -> None:

@@ -20,6 +20,9 @@ from src.algorithms.qipso_de import QIPSODEConfig
 from src.algorithms.pso import PSOConfig
 from src.algorithms.ga import GAConfig
 from src.algorithms.de import DEConfig
+from src.algorithms.gwo import GWOConfig
+from src.algorithms.lshade import LSHADEConfig
+from src.algorithms.cmaes import CMAESConfig
 from src.env import (
     MultiUAVEnv,
     MultiUAVScenario,
@@ -67,6 +70,18 @@ def build_optimizer(name: str, env, dim: int, lower: float, upper: float,
                    seed=seed, init_x=init_x)
     if name == "de":
         cfg = DEConfig(iterations=iterations, pop_size=swarm_size, **overrides)
+        return cls(env.fitness, dim, lower, upper, cfg=cfg, device=device,
+                   seed=seed, init_x=init_x)
+    if name == "gwo":
+        cfg = GWOConfig(iterations=iterations, pop_size=swarm_size, **overrides)
+        return cls(env.fitness, dim, lower, upper, cfg=cfg, device=device,
+                   seed=seed, init_x=init_x)
+    if name == "lshade":
+        cfg = LSHADEConfig(iterations=iterations, pop_size=swarm_size, **overrides)
+        return cls(env.fitness, dim, lower, upper, cfg=cfg, device=device,
+                   seed=seed, init_x=init_x)
+    if name == "cmaes":
+        cfg = CMAESConfig(iterations=iterations, pop_size=swarm_size, **overrides)
         return cls(env.fitness, dim, lower, upper, cfg=cfg, device=device,
                    seed=seed, init_x=init_x)
     if name in ("greedy", "straight"):

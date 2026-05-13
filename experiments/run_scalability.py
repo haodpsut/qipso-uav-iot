@@ -13,7 +13,8 @@ from common import build_env, run_one, device_auto
 from src.utils import save_csv
 
 
-ALGS = ["qipso", "qipsode", "pso", "ga", "de", "greedy", "straight"]
+ALGS = ["qipso", "qipsode", "pso", "ga", "de", "gwo", "lshade", "cmaes",
+        "greedy", "straight"]
 K_LIST = [10, 20, 50, 100, 150]
 
 
